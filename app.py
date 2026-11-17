@@ -9,6 +9,11 @@ REDIS_CONFIG = {
 
 
 def seed_sample_movies(repo: MovieRepository):
+    """Seeds sample movies only when the database is completely empty."""
+    if repo.get_index_stats()["indexed_movies"] > 0:
+        print("Existing movies detected in Redis. Skipping initial seed.")
+        return
+
     samples = [
         Movie(
             movie_id="11003",
@@ -68,7 +73,9 @@ def main():
         print("3. Filter by genre tag (e.g., Drama, Thriller, Action)")
         print("4. Filter by minimum rating (e.g., 8.5)")
         print("5. Add a new movie")
-        print("6. View index stats")
+        print("6. Update an existing movie")
+        print("7. Delete a movie")
+        print("8. View index stats")
         print("0. Exit")
 
         choice = input("Choose an option: ").strip()
@@ -98,6 +105,33 @@ def main():
             repo.save_movie(m)
             print("Saved! Secondary indexes updated automatically.")
         elif choice == "6":
+            mid = input("Enter Movie ID to update (e.g. 11004): ").strip()
+            existing = repo.get_movie_by_id(mid)
+            if not existing:
+                print(f"Movie [{mid}] not found.")
+                continue
+            print(f"Editing: {existing.title} (leave blank to keep current value)")
+            new_title = input(f"New Title [{existing.title}]: ").strip() or None
+            new_genre = input(f"New Genre [{existing.genre}]: ").strip() or None
+            new_rating_str = input(f"New Rating [{existing.rating}]: ").strip()
+            new_rating = float(new_rating_str) if new_rating_str else None
+            new_plot = input(f"New Plot [{existing.plot[:30]}...]: ").strip() or None
+
+            updated = repo.update_movie(
+                mid,
+                title=new_title,
+                genre=new_genre,
+                rating=new_rating,
+                plot=new_plot,
+            )
+            print(f"Updated [{updated.movie_id}] {updated.title} and rebuilt indexes!")
+        elif choice == "7":
+            mid = input("Enter Movie ID to delete (e.g. 11004): ").strip()
+            if repo.delete_movie(mid):
+                print(f"Deleted movie [{mid}] and scrubbed all secondary indexes.")
+            else:
+                print(f"Movie [{mid}] not found.")
+        elif choice == "8":
             print("Index Stats:", repo.get_index_stats())
         elif choice == "0":
             break
