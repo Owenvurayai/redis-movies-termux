@@ -70,12 +70,13 @@ def main():
         print("\n=== RediSearch Movie App ===")
         print("1. List all movies (sorted by highest rating)")
         print("2. Search by title/text (e.g., Heat, Jedi)")
-        print("3. Filter by genre tag (e.g., Drama, Thriller, Action)")
+        print("3. Filter by genre tag (e.g., Drama, Thriller, Action, Sci-Fi)")
         print("4. Filter by minimum rating (e.g., 8.5)")
-        print("5. Add a new movie")
-        print("6. Update an existing movie")
-        print("7. Delete a movie")
-        print("8. View index stats")
+        print("5. Filter by release year range (e.g., 2000 to 2015)")
+        print("6. Add a new movie")
+        print("7. Update an existing movie")
+        print("8. Delete a movie")
+        print("9. View index stats")
         print("0. Exit")
 
         choice = input("Choose an option: ").strip()
@@ -86,14 +87,18 @@ def main():
             term = input("Enter search text: ").strip()
             display_movies(repo.search_movies(term))
         elif choice == "3":
-            genre = input("Enter genre (Drama/Thriller/Action): ").strip()
+            genre = input("Enter genre (Drama/Thriller/Action/Sci-Fi): ").strip()
             display_movies(repo.search_movies(f"@genre:{{{genre}}}"))
         elif choice == "4":
             min_r = input("Minimum rating (e.g. 8.5): ").strip()
             display_movies(repo.search_movies(f"@rating:[{min_r} 10]", sort_by="rating", ascending=False))
         elif choice == "5":
+            start_y = input("Start year (e.g. 1970): ").strip()
+            end_y = input("End year (e.g. 1990): ").strip()
+            display_movies(repo.search_movies(f"@year:[{start_y} {end_y}]", sort_by="release_year", ascending=True))
+        elif choice == "6":
             m = Movie(
-                movie_id=input("Movie ID (e.g. 11006): ").strip(),
+                movie_id=input("Movie ID (e.g. 11009): ").strip(),
                 title=input("Title: ").strip(),
                 plot=input("Plot: ").strip(),
                 release_year=int(input("Release Year: ").strip()),
@@ -104,8 +109,8 @@ def main():
             )
             repo.save_movie(m)
             print("Saved! Secondary indexes updated automatically.")
-        elif choice == "6":
-            mid = input("Enter Movie ID to update (e.g. 11004): ").strip()
+        elif choice == "7":
+            mid = input("Enter Movie ID to update (e.g. 11006): ").strip()
             existing = repo.get_movie_by_id(mid)
             if not existing:
                 print(f"Movie [{mid}] not found.")
@@ -125,13 +130,13 @@ def main():
                 plot=new_plot,
             )
             print(f"Updated [{updated.movie_id}] {updated.title} and rebuilt indexes!")
-        elif choice == "7":
-            mid = input("Enter Movie ID to delete (e.g. 11004): ").strip()
+        elif choice == "8":
+            mid = input("Enter Movie ID to delete: ").strip()
             if repo.delete_movie(mid):
                 print(f"Deleted movie [{mid}] and scrubbed all secondary indexes.")
             else:
                 print(f"Movie [{mid}] not found.")
-        elif choice == "8":
+        elif choice == "9":
             print("Index Stats:", repo.get_index_stats())
         elif choice == "0":
             break
